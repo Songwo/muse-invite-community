@@ -41,6 +41,8 @@ npm start
 
 首次打开网站会创建浏览器身份，可点击右上角昵称修改名称。本地模式使用 HttpOnly Cookie，线上跨域 API 模式使用 localStorage 中的随机会话 token，服务端仅保存 token 的 hash。它没有密码登录、跨设备账号或身份恢复入口：清除对应浏览器存储、会话到期或换浏览器后，无法通过页面找回原来的分享和领取管理权。旧记录仍保存在数据库中。
 
+云端模式需要支持 Web Locks 的现代浏览器，并允许网站使用 localStorage。同一浏览器配置下打开的网站标签页共享身份；不同设备、浏览器配置或独立的无痕会话不共享身份。清空网站存储后会建立新身份，原身份没有恢复入口。
+
 在本目录运行时，开发和构建后的服务默认共用 `data/muse.sqlite`，重启不会清空数据。不要删除 `data` 目录，它保存用户、会话、分享、领取和动态；端到端测试每次使用独立的 `data/e2e-*.sqlite`。线上记录保存在 Cloudflare 的 Durable Object SQLite 中，与本地数据库分开。
 
 ## 配置
@@ -66,7 +68,7 @@ npm start
 
 ## 线上部署
 
-目标站点：[Muse 邀请互助](https://songwo.github.io/muse-invite-community/)。源码仓库：[Songwo/muse-invite-community](https://github.com/Songwo/muse-invite-community)。`main` 保存源码，`gh-pages` 保存构建后的静态页面，GitHub Pages 从 `gh-pages` 分支根目录发布。
+已部署站点：[Muse 邀请互助](https://songwo.github.io/muse-invite-community/)。源码仓库：[Songwo/muse-invite-community](https://github.com/Songwo/muse-invite-community)。`main` 保存源码，`gh-pages` 保存构建后的静态页面，GitHub Pages 从 `gh-pages` 分支根目录发布。Cloudflare API 与 GitHub Pages 均已部署；线上页面、静态资源、共享状态、昵称保存与刷新、桌面和手机导航已实际验收通过。
 
 GitHub Pages 无法运行 Express 或保存共享 SQLite，因此网站通过 HTTPS 连接 Cloudflare Worker。`wrangler.jsonc` 管理 API、社区 Durable Object 绑定和允许的页面 Origin；`worker/index.ts` 是云端入口。一个社区使用一个协调对象，领取容量和相关记录在同步事务中更新。
 
@@ -77,7 +79,20 @@ npm run worker:check
 npm run worker:deploy
 ```
 
-前端构建时将 `VITE_API_URL` 设置为 Wrangler 返回的实际 HTTPS API 地址，将 `PAGES_BASE` 设置为 `/muse-invite-community/`，然后执行 `npm run build`。API 地址是公开配置，不是凭据；不要在前端构建变量中放 API Key。将 `dist` 的内容更新到 `gh-pages` 分支即可发布前端。
+当前生产 API 地址为 https://muse-invite-api.uiospyuw.workers.dev。在本目录使用 PowerShell 构建 Pages 静态页面：
+
+```powershell
+$env:PAGES_BASE = '/muse-invite-community/'
+$env:VITE_API_URL = 'https://muse-invite-api.uiospyuw.workers.dev'
+npm run build
+```
+
+API 地址是公开配置，不是凭据；不要在前端构建变量中放 API Key。将 `dist` 的内容更新到 `gh-pages` 分支即可发布前端。这两个环境变量保留在当前 PowerShell 会话中；恢复本地同源开发时执行：
+
+```powershell
+Remove-Item Env:PAGES_BASE
+Remove-Item Env:VITE_API_URL
+```
 
 仓库不包含本地数据库、会话记录或 Cloudflare/GitHub 登录凭据。切勿把 `data`、`.wrangler` 或 `.env` 添加到版本控制。
 
