@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "muse-invite-api",
+  "account_id": "18758d3d71fdd187e14e1c4baeb100c2",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "ALLOWED_ORIGIN": "https://songwo.github.io",
+    "COMMUNITY_ID": "muse-invite-community"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "COMMUNITY", "class_name": "MuseCommunity" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["MuseCommunity"] }]
+}
